@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="SciDiff-RC: Response curves for measuring local safe-step budgets in scientific diffusion samplers.">
+  <meta name="keywords" content="diffusion models, scientific machine learning, turbulence, sampler step size, response curve, CFL">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>SciDiff-RC: Response Curves for Scientific Diffusion Samplers</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+
+<!-- Hero / Title -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-2 publication-title">
+            Response Curves Reveal Accuracy-Limited Step-Size Laws<br>
+            in Scientific Diffusion Samplers
+          </h1>
+          <p class="subtitle is-5" style="margin-top: 0.5rem; color: #5a5a5a;">
+            Project alias: <strong>SciDiff-RC</strong>
+          </p>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">Anonymous Author(s)</span>
+          </div>
+
+          <div class="is-size-6 has-text-centered" style="margin-top: 0.4rem; color: #6b6b6b;">
+            Under double-blind review at NeurIPS 2026
+          </div>
+
+          <div class="publication-links has-text-centered">
+            <span class="link-block">
+              <a href="#" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                <span>Paper</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="#" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fas fa-folder-open"></i></span>
+                <span>Supplementary</span>
+              </a>
+            </span>
+            <span class="link-block">
+              <a href="#" class="external-link button is-normal is-rounded is-dark">
+                <span class="icon"><i class="fab fa-github"></i></span>
+                <span>Code</span>
+              </a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- TL;DR -->
+<section class="section hero is-light" style="padding-top: 2rem; padding-bottom: 2rem;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-4">TL;DR</h2>
+        <div class="content has-text-justified">
+          <p>
+            We measure, for each noise level, the largest deterministic DDIM
+            jump a trained scientific diffusion sampler can take while keeping
+            the endpoint spectrum faithful to a fine-step reference. The
+            resulting <em>response curve</em> is a calibrated
+            <strong>local safe-step budget</strong>: it predicts unsafe
+            held-out steps, conservatively audits multi-step schedules, and
+            falsifies both the single-power-law and strict-CFL stories.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Abstract -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Scientific diffusion samplers are often discretized with generic
+            noise grids borrowed from image generation. For PDE emulators,
+            this is risky: a coarse sampler can produce visually plausible
+            fields while silently violating spectral diagnostics. We introduce
+            <em>response curves</em>, a censoring-aware evaluation protocol
+            that measures, at each noise level, the largest deterministic
+            DDIM jump whose endpoint spectrum matches a fine-step
+            deterministic reference. The curve acts as a local safe-step
+            budget, not just a descriptive fit: budgets calibrated from
+            ACDM/Iso turbulence checkpoints predict fresh held-out initial
+            conditions, with below-budget pass rates 100%, at-budget pass
+            rates 90.6&ndash;97.9%, and 1.2&times;-budget pass rates
+            collapsing to 1.8&ndash;20.1%. At the schedule level, the same
+            budget audit conservatively flags <em>all</em> median-failing
+            held-out multi-step stress schedules, with false positives near
+            the threshold.
+          </p>
+          <p>
+            The evaluation also falsifies two common intuitions. The
+            response curve is not a single global power law: across six
+            threshold-by-seed runs it is reproducibly two-regime, with
+            low-noise exponent 0.656&nbsp;&plusmn;&nbsp;0.050 and high-noise
+            exponent 1.046&nbsp;&plusmn;&nbsp;0.046, while a 4/3 law is
+            rejected in every run. Nor is the limit explained by a strict
+            first-order CFL-style rule under our update-field stiffness
+            proxy: &Delta;&sigma;<sub>max</sub> &prop;
+            &lambda;<sub>max</sub><sup>&minus;1</sup> fails. Mechanism
+            probes instead support an accuracy-limited model
+            <em>e(h, &sigma;) &asymp; C(&sigma;) h<sup>p(&sigma;)</sup></em>,
+            where stiffness-like gains and denoiser saturation modulate the
+            local error coefficient and regime transition. The result is a
+            deployment-time evaluation methodology for scientific diffusion
+            samplers: response curves predict unsafe local steps,
+            conservatively audit deployment schedules, and reveal when
+            appealing physical step-size laws are the wrong explanation.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Overview Figure -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Method &amp; Audit Overview</h2>
+    <figure class="image">
+      <img src="static/images/overview_response_audit.png" alt="Overview of the response-curve protocol and the schedule-level safety audit." style="max-width: 100%; height: auto;">
+    </figure>
+    <p class="figure-caption">
+      <strong>(A)</strong> We measure the largest deterministic DDIM jump
+      whose endpoint spectrum matches a fine-step reference.
+      <strong>(B)</strong> The resulting response curve is a local
+      safe-step envelope; proposed schedule jumps can be checked against it
+      before deployment. <strong>(C)</strong> On held-out multi-step stress
+      schedules, response-budget overshoot flags <em>all</em>
+      median-failing schedule groups (red); orange marks conservative
+      false positives near the threshold; gray marks passing schedules.
+    </p>
+  </div>
+</section>
+
+
+<!-- Result 1: Two-regime law -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">The Response Law Is Two-Regime, Not 4/3</h2>
+    <p class="content has-text-justified">
+      Across six runs &mdash; thresholds &tau; &isin; {0.10, 0.20, 0.30}
+      crossed with two ACDM/Iso checkpoint seeds &mdash; the response curve
+      is reproducibly two-regime. Low-noise slopes concentrate near 2/3,
+      high-noise slopes near 1, and a single power-law fit is decisively
+      rejected (&Delta;AIC &ge; 47 in every run). The hypothesized
+      4/3 Kolmogorov-style scaling is not supported.
+    </p>
+    <figure class="image">
+      <img src="static/images/p1_response_summary.png" alt="Multi-threshold response-curve summary across two checkpoint seeds." style="max-width: 100%; height: auto;">
+    </figure>
+    <p class="figure-caption">
+      <strong>Multi-threshold validation.</strong> The response curve is
+      reproducibly two-regime; 0/2737 monotonicity violations,
+      min &Delta;AIC&nbsp;47.4 against a single power, max single-run
+      exponent 1.135.
+    </p>
+    <div class="takeaway">
+      <strong>Takeaway.</strong> The step-size envelope is not a single
+      global exponent &mdash; it has a regime transition co-located with a
+      denoiser-saturation crossing.
+    </div>
+  </div>
+</section>
+
+
+<!-- Result 2: Held-out safe-step prediction -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Calibrated Budgets Predict Safe Local Steps</h2>
+    <p class="content has-text-justified">
+      Budgets calibrated from the response curve transfer to fresh
+      held-out initial conditions. Below-budget steps pass uniformly; at
+      budget, pass rates remain high (90.6&ndash;97.9%); just
+      1.2&times; the budget collapses pass rates to 1.8&ndash;20.1%.
+    </p>
+    <figure class="image">
+      <img src="static/images/heldout_pass_rates.png" alt="Held-out pass rates as a function of budget multiplier." style="max-width: 80%; height: auto; display: block; margin: 0 auto;">
+    </figure>
+    <p class="figure-caption">
+      <strong>Held-out safe-step prediction.</strong> The calibrated budget
+      sharply separates safe and unsafe local jumps on fresh ICs.
+    </p>
+  </div>
+</section>
+
+
+<!-- Result 3: Schedule audit -->
+<section class="section" style="padding-top: 0;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Schedule-Level Failure Audit</h2>
+    <p class="content has-text-justified">
+      We audit complete coarse schedules by checking whether any local
+      jump exceeds the measured response envelope. Across 120 stress
+      schedule groups (NFE &isin; {2, 3, 4, 6, 8}), the audit flags every
+      median-failing group (20 TP, 0 FN) with 10 conservative false
+      positives near the threshold. Spearman correlation with spectrum
+      error is 0.894 and with state error is 0.980 at the instance level.
+    </p>
+    <figure class="image">
+      <img src="static/images/schedule_failure_scatter.png" alt="Schedule-level overshoot vs. failure scatter." style="max-width: 100%; height: auto;">
+    </figure>
+    <p class="figure-caption">
+      <strong>Schedule audit.</strong> Response-budget overshoot
+      <em>R</em><sub>max</sub> &gt; 1 conservatively flags every
+      median-failing schedule on held-out ICs.
+    </p>
+  </div>
+</section>
+
+
+<!-- Contributions -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Contributions</h2>
+    <div class="content">
+      <ul>
+        <li><strong>C1.</strong> A censoring-aware protocol for measuring
+          local safe-step budgets &Delta;&sigma;<sub>max</sub>(&sigma;)
+          in trained scientific diffusion samplers.</li>
+        <li><strong>C2.</strong> Calibrated budgets transfer to held-out
+          ICs and audit multi-step deployment schedules with conservative
+          (zero-FN) failure flagging.</li>
+        <li><strong>C3.</strong> The response law is reproducibly
+          two-regime, not a single power; the 4/3 Kolmogorov-style
+          intuition is rejected on ACDM/Iso checkpoints.</li>
+        <li><strong>C4.</strong> Strict first-order CFL fails; an
+          accuracy-limited error model
+          <em>e(h, &sigma;) &asymp; C(&sigma;) h<sup>p(&sigma;)</sup></em>
+          better organizes stiffness, saturation, and local-error probes.</li>
+        <li><strong>C5.</strong> Cross-variant checks (NCN/Iso, Inc, Tra,
+          RefinerStepper) frame response curves as an evaluation
+          methodology, not a universal architecture-independent law.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<!-- BibTeX -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">BibTeX</h2>
+    <pre class="bibtex-block"><code>@inproceedings{anonymous2026scidiffrc,
+  title  = {Response Curves Reveal Accuracy-Limited Step-Size Laws
+            in Scientific Diffusion Samplers},
+  author = {Anonymous Author(s)},
+  booktitle = {Submitted to the Annual Conference on
+               Neural Information Processing Systems (NeurIPS)},
+  year   = {2026},
+  note   = {Under double-blind review}
+}</code></pre>
+  </div>
+</section>
+
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container is-max-desktop has-text-centered">
+    <p>
+      Page template adapted from the
+      <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank" rel="noopener">Academic Project Page Template</a>
+      and the <a href="https://nerfies.github.io/" target="_blank" rel="noopener">Nerfies</a> page.
+      This page is anonymized for double-blind review.
+    </p>
+  </div>
+</footer>
+
+
+</body>
+</html>
